@@ -1,5 +1,7 @@
 from loader import bot
 
+from data.create_db import create_customer_table
+
 from telebot import types
 from telebot.types import Message
 
@@ -46,7 +48,8 @@ def run(message: Message):
     if user_message == 'Получить бесплатный прозноз погоды на сегодня':
         if my_state.free_spin:
             count_of_spin = get_users_spin_from_users_id(message.from_user.id)
-            if count_of_spin:
+            print(count_of_spin)
+            if count_of_spin > 0:
                 bot.send_message(message.chat.id, 'Напиши свой город')
                 my_state.write_city = True
             else:
@@ -57,7 +60,7 @@ def run(message: Message):
         result = get_users_name_from_users_id(message.from_user.id)
         if not result:
             bot.send_message(message.chat.id, 'Введи свое имя')
-            my_state.write_city = True
+            my_state.write_name = True
         else:
             bot.send_message(message.chat.id, 'Вы уже зареганы')
     elif user_message == 'Начать использовать':
@@ -67,8 +70,10 @@ def run(message: Message):
             my_state.write_city = False
             my_state.city = user_message
 
-            lose_one_spin(message.from_user.id)
-            get_forecast_today(message)
+            count_of_spin = get_users_spin_from_users_id(message.from_user.id)
+            if count_of_spin > 0:
+                lose_one_spin(message.from_user.id)
+                get_forecast_today(message)
         elif my_state.write_name:
             my_state.write_name = False
             result = put_to_db(message.from_user.id, user_message, registration=True)
@@ -122,4 +127,5 @@ def question_answer(message: Message):
 
 if __name__ == '__main__':
     print(START_MESSAGE)
+    create_customer_table()
     bot.polling(none_stop=True)
